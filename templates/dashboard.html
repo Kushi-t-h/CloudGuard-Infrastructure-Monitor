@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudGuard — Infrastructure Monitoring & Auto-Recovery</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --primary: #3b82f6;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 24px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.6rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .badge {
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            text-transform: uppercase;
+        }
+
+        .badge-healthy {
+            background-color: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .badge-unhealthy {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .card-title {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .card-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .actions-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .btn {
+            font-size: 0.9rem;
+            font-weight: 600;
+            padding: 10px 18px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .btn-secondary {
+            background-color: #475569;
+            color: white;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            margin-top: 12px;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        .status-pill {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .status-pill.HEALTHY, .status-pill.SUCCESS {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+        }
+
+        .status-pill.UNHEALTHY, .status-pill.FAILED {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+        }
+
+        .status-pill.IN_PROGRESS {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+        }
+
+        .footer {
+            margin-top: 24px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>🛡️ CloudGuard Monitor</h1>
+                <small style="color: var(--text-muted);">Infrastructure Monitoring & Deterministic Auto-Recovery System</small>
+            </div>
+            <div>
+                {% if service_status.healthy %}
+                <span class="badge badge-healthy">● System Operational</span>
+                {% else %}
+                <span class="badge badge-unhealthy">▲ Failure Detected</span>
+                {% endif %}
+            </div>
+        </header>
+
+        <div class="actions-card">
+            <div>
+                <strong>Simulation Control</strong>
+                <p style="margin: 4px 0 0; font-size: 0.85rem; color: var(--text-muted);">
+                    Trigger a safe, simulated service degradation to observe automated recovery.
+                </p>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <form action="/simulate-failure" method="POST" style="margin: 0;">
+                    <button type="submit" class="btn btn-danger" {% if not service_status.healthy %}disabled style="opacity: 0.5; cursor: not-allowed;"{% endif %}>
+                        Simulate Failure
+                    </button>
+                </form>
+                <a href="/" class="btn btn-secondary">Refresh Dashboard</a>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <div class="card-title">Current Status</div>
+                <div class="card-value" style="color: {% if service_status.healthy %}var(--success){% else %}var(--danger){% endif %}; font-size: 1.4rem;">
+                    {{ "Healthy (200)" if service_status.healthy else "Degraded (503)" }}
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title">Total Health Checks</div>
+                <div class="card-value">{{ counts.total_checks }}</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Failures Detected</div>
+                <div class="card-value" style="color: var(--danger);">{{ counts.total_failures }}</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Auto-Recoveries</div>
+                <div class="card-value" style="color: var(--success);">{{ counts.successful_recoveries }}</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="card-title" style="margin: 0;">Recent Monitoring & Recovery Events</div>
+                <small style="color: var(--text-muted);">Auto-refreshes on reload</small>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Time (UTC)</th>
+                        <th>Event Type</th>
+                        <th>Status</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in events %}
+                    <tr>
+                        <td style="white-space: nowrap; color: var(--text-muted);">{{ event.timestamp }}</td>
+                        <td><strong>{{ event.event_type }}</strong></td>
+                        <td><span class="status-pill {{ event.status }}">{{ event.status }}</span></td>
+                        <td>{{ event.details }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px;">
+                            No events logged yet. Health monitoring is running.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="footer">
+            CloudGuard v1.0 • Built with Flask, SQLite, and Python Threading Daemon
+        </div>
+    </div>
+    <script>
+        // Automatically refresh dashboard after simulating failure or to show auto-recovery updates
+        {% if not service_status.healthy %}
+        setTimeout(function() {
+            window.location.reload();
+        }, 3000);
+        {% endif %}
+    </script>
+</body>
+</html>
